@@ -152,6 +152,8 @@ static OrderedMap<std::string, CmdEntry> g_gnbCmdEntries = {
     {"ue-list", {"List all UEs associated with the gNB", "", DefaultDesc, false}},
     {"ue-count", {"Print the total number of UEs connected the this gNB", "", DefaultDesc, false}},
     {"ue-release", {"Request a UE context release for the given UE", "<ue-id>", DefaultDesc, false}},
+    {"handover", {"Perform handover for the given UE at target gNB", "<asAmfid> <amfUENgapId> <ranUeNgapId> <ctxtId> <ulStr> <amf_name>", DefaultDesc, false}}, // Ignacio
+    {"handover-prepare", {"Display UE info to perform handover at the target gNB", "<ue-id>", DefaultDesc, false}},
 };
 
 static OrderedMap<std::string, CmdEntry> g_ueCmdEntries = {
@@ -216,7 +218,24 @@ static std::unique_ptr<GnbCliCommand> GnbCliParseImpl(const std::string &subCmd,
             CMD_ERR("Invalid UE ID")
         return cmd;
     }
-
+    else if (subCmd == "handover-prepare")
+    {
+        auto cmd = std::make_unique<GnbCliCommand>(GnbCliCommand::HANDOVERPREPARE);
+        cmd->ueId = utils::ParseInt(options.getPositional(0));
+        return cmd;
+    }
+    else if (subCmd == "handover")
+    {
+        auto cmd = std::make_unique<GnbCliCommand>(GnbCliCommand::HANDOVER);
+        cmd->asAmfId = utils::ParseInt(options.getPositional(0));
+        cmd->amfUeNgapId = utils::ParseInt(options.getPositional(1));
+        cmd->ranUeNgapId = utils::ParseInt(options.getPositional(2));
+        cmd->ctxtId = utils::ParseInt(options.getPositional(3));
+        cmd->ulStr = utils::ParseInt(options.getPositional(4));
+        cmd->amf_name = options.getPositional(5);
+        return cmd;
+        //return std::make_unique<GnbCliCommand>(GnbCliCommand::);
+    }
     return nullptr;
 }
 

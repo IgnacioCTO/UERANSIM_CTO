@@ -16,6 +16,8 @@
 #include <gnb/sctp/task.hpp>
 #include <utils/common.hpp>
 #include <utils/printer.hpp>
+#include <iostream>
+#include <string>
 
 #define PAUSE_CONFIRM_TIMEOUT 3000
 #define PAUSE_POLLING 10
@@ -154,6 +156,43 @@ void GnbCmdHandler::handleCmdImpl(NmGnbCliCommand &msg)
         }
         break;
     }
+    case app::GnbCliCommand::HANDOVERPREPARE: {
+        
+        Json json = Json::Arr({});
+        int ueid = msg.cmd->ueId;
+        //std::cout << " ueid: "<< ueid << std::endl;
+        if (m_base->ngapTask->m_ueCtx.count(msg.cmd->ueId) == 0)
+            sendError(msg.address, "UE not found with given ID");
+        else
+        {
+            auto *ue = m_base->ngapTask->findUeContext(ueid);
+            auto *amf = m_base->ngapTask->findAmfContext(ue->associatedAmfId);
+            json.push(Json::Obj({
+                {"ue-id", ueid},
+                {"AMF UE NGAP ID", std::to_string(ue->amfUeNgapId)},
+                {"RAN UE NGAP ID", std::to_string(ue->ranUeNgapId)},
+                {"UE uplink  stream ID", std::to_string(ue->uplinkStream)},
+                {"AMF ID", std::to_string(ue->associatedAmfId)},
+                {"AMF CTX ID", std::to_string(amf->ctxId)},
+                {"AMF name",amf->amfName},
+            }));
+            sendResult(msg.address, json.dumpYaml());
+        }
+        break;
+    }
+    case app::GnbCliCommand::HANDOVER: {
+        int asAmfId = msg.cmd->asAmfId; 
+        int64_t amfUeNgapId = msg.cmd->amfUeNgapId;
+        int64_t ranUeNgapId = msg.cmd->ranUeNgapId;
+        int ctxtId = msg.cmd->ctxtId;
+        int ulStr = msg.cmd->ulStr;
+        std::string amf_name = msg.cmd->amf_name;
+        std::cout << " asAmfId: "<< asAmfId << std::endl;
+        std::cout << " amf_name: "<< amf_name << std::endl;
+        m_base->ngapTask->handleXnHandover(asAmfId, amfUeNgapId, ranUeNgapId, ctxtId, ulStr, amf_name);
+        
+        break;
+    } 
     }
 }
 

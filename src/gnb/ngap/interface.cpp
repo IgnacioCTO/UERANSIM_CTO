@@ -31,6 +31,12 @@
 #include <asn/ngap/ASN_NGAP_SliceSupportItem.h>
 #include <asn/ngap/ASN_NGAP_SupportedTAItem.h>
 
+#include "encode.hpp"
+#include <asn/ngap/ASN_NGAP_UserLocationInformationNR.h>
+//#include <asn/ngap/ASN_NGAP_PDUSessionResourceToBeSwitchedDLList.h>
+#include <asn/ngap/ASN_NGAP_PDUSessionResourceToBeSwitchedDLItem.h>
+
+
 namespace nr::gnb
 {
 
@@ -252,6 +258,129 @@ void NgapTask::sendErrorIndication(int amfId, NgapCause cause, int ueId)
     else
         sendNgapNonUe(amfId, pdu);
 }
+
+void NgapTask::handleXnHandover(int asAmfId, int64_t amfUeNgapId, int64_t ranUeNgapId, int ctxtId, int ulStr, std::string amf_name)
+{
+
+    m_logger->debug("handle Xn handover asAmfId: %d", asAmfId);
+    m_logger->debug("amf_Name: %s", amf_name.c_str());
+
+    auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_PathSwitchRequest>({});
+
+    int ueId = 3;
+    //auto *ue = findUeContext(ueId);
+    auto *ue = new NgapUeContext(ueId);
+    ue->amfUeNgapId = amfUeNgapId;
+    ue->ranUeNgapId = ranUeNgapId;
+    ue->uplinkStream = ulStr;
+
+    /* Insert UE-related information elements */
+    {
+        if (amfUeNgapId > 0)
+        {
+            asn::ngap::AddProtocolIeIfUsable(*pdu, asn_DEF_ASN_NGAP_AMF_UE_NGAP_ID,
+                                             ASN_NGAP_ProtocolIE_ID_id_SourceAMF_UE_NGAP_ID, ASN_NGAP_Criticality_reject,
+                                             [ue](void *mem) {
+                                                 auto &id = *reinterpret_cast<ASN_NGAP_AMF_UE_NGAP_ID_t *>(mem);
+                                                 asn::SetSigned64(ue->amfUeNgapId, id);
+                                             });
+        }
+
+        asn::ngap::AddProtocolIeIfUsable(
+            *pdu, asn_DEF_ASN_NGAP_RAN_UE_NGAP_ID, ASN_NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID,
+            ASN_NGAP_Criticality_reject,
+            [ue](void *mem) { *reinterpret_cast<ASN_NGAP_RAN_UE_NGAP_ID_t *>(mem) = ue->ranUeNgapId; });
+
+        asn::ngap::AddProtocolIeIfUsable(
+            *pdu, asn_DEF_ASN_NGAP_UserLocationInformation, ASN_NGAP_ProtocolIE_ID_id_UserLocationInformation,
+            ASN_NGAP_Criticality_ignore, [this](void *mem) {
+                auto *loc = reinterpret_cast<ASN_NGAP_UserLocationInformation *>(mem);
+                loc->present = ASN_NGAP_UserLocationInformation_PR_userLocationInformationNR;
+                loc->choice.userLocationInformationNR = asn::New<ASN_NGAP_UserLocationInformationNR>();
+
+                auto &nr = loc->choice.userLocationInformationNR;
+                //nr->timeStamp = asn::New<ASN_NGAP_TimeStamp_t>();
+
+                ngap_utils::ToPlmnAsn_Ref(m_base->config->plmn, nr->nR_CGI.pLMNIdentity);
+                asn::SetBitStringLong<36>(m_base->config->nci, nr->nR_CGI.nRCellIdentity);
+                ngap_utils::ToPlmnAsn_Ref(m_base->config->plmn, nr->tAI.pLMNIdentity);
+                asn::SetOctetString3(nr->tAI.tAC, octet3{m_base->config->tac});
+                //asn::SetOctetString4(*nr->timeStamp, octet4{utils::CurrentTimeStamp().seconds32()});
+            });
+
+        asn::ngap::AddProtocolIeIfUsable(
+            *pdu, asn_DEF_ASN_NGAP_UESecurityCapabilities, ASN_NGAP_ProtocolIE_ID_id_UESecurityCapabilities,
+            ASN_NGAP_Criticality_ignore, [this](void *mem) {
+                auto *sec = reinterpret_cast<ASN_NGAP_UESecurityCapabilities *>(mem); 
+                asn::SetBitString(sec->nRencryptionAlgorithms, OctetString::FromHex("FFFF"));
+                asn::SetBitString(sec->nRintegrityProtectionAlgorithms, OctetString::FromHex("FFFF")) ;
+                asn::SetBitString(sec->eUTRAencryptionAlgorithms, OctetString::FromHex("FFFF")) ;
+                asn::SetBitString(sec->eUTRAintegrityProtectionAlgorithms, OctetString::FromHex("FFFF")) ;
+            });
+
+        asn::ngap::AddProtocolIeIfUsable(
+            *pdu, asn_DEF_ASN_NGAP_PDUSessionResourceToBeSwitchedDLList, ASN_NGAP_ProtocolIE_ID_id_PDUSessionResourceToBeSwitchedDLList,
+            ASN_NGAP_Criticality_reject, [this](void *mem) {
+                //auto &swtchpdulist = reinterpret_cast<ASN_NGAP_PDUSessionResourceToBeSwitchedDLList_t *>(mem); 
+                auto *pduitem = asn::New<ASN_NGAP_PDUSessionResourceToBeSwitchedDLItem>();
+                auto *PDUList = asn::New<ASN_NGAP_PathSwitchRequestIEs>();
+                
+                // Print PDUsession id and TEID and send as arguments
+                pduitem->pDUSessionID=1;
+                //std::string ss = "001f"+string_tunnel_address+"000000010009";
+                std::string ss = "001fc0a81dd9000000010013";
+                asn::SetOctetString(pduitem->pathSwitchRequestTransfer,OctetString::FromHex(ss));//001f7f00000f000000010009
+                asn::SequenceAdd(PDUList->value.choice.PDUSessionResourceToBeSwitchedDLList,pduitem);
+                *reinterpret_cast<ASN_NGAP_PDUSessionResourceToBeSwitchedDLList_t *>(mem) = PDUList->value.choice.PDUSessionResourceToBeSwitchedDLList;
+                //swtchpdulist->list=PDUList->value.choice.PDUSessionResourceToBeSwitchedDLList;
+                //PDUList->list.push_back(pduitem);
+                // auto *supportedTa = asn::New<ASN_NGAP_SupportedTAItem>();
+                // auto *ieSupportedTaList = asn::New<ASN_NGAP_NGSetupRequestIEs>();
+                //asn::SequenceAdd(ieSupportedTaList->value.choice.SupportedTAList, supportedTa);
+
+            });   
+    }
+
+
+    /* Encode and send the PDU */
+
+    char errorBuffer[1024];
+    size_t len;
+
+    if (asn_check_constraints(&asn_DEF_ASN_NGAP_NGAP_PDU, pdu, errorBuffer, &len) != 0)
+    {
+        m_logger->err("NGAP PDU ASN constraint validation failed");
+        asn::Free(asn_DEF_ASN_NGAP_NGAP_PDU, pdu);
+        return;
+    }
+
+    ssize_t encoded;
+    uint8_t *buffer;
+    if (!ngap_encode::Encode(asn_DEF_ASN_NGAP_NGAP_PDU, pdu, encoded, buffer))
+        m_logger->err("NGAP APER encoding failed");
+    else
+    {
+        auto msg = std::make_unique<NmGnbSctp>(NmGnbSctp::SEND_MESSAGE);
+        msg->clientId = ctxtId;
+        msg->stream = ue->uplinkStream;
+        msg->buffer = UniqueBuffer{buffer, static_cast<size_t>(encoded)};
+        m_base->sctpTask->push(std::move(msg));
+
+        if (m_base->nodeListener)
+        {
+            std::string xer = ngap_encode::EncodeXer(asn_DEF_ASN_NGAP_NGAP_PDU, pdu);
+            if (xer.length() > 0)
+            {
+                m_base->nodeListener->onSend(app::NodeType::GNB, m_base->config->name, app::NodeType::AMF, amf_name,
+                                             app::ConnectionType::NGAP, xer);
+            }
+        }
+    }
+
+    asn::Free(asn_DEF_ASN_NGAP_NGAP_PDU, pdu);
+
+}
+
 
 void NgapTask::receiveAmfConfigurationUpdate(int amfId, ASN_NGAP_AMFConfigurationUpdate *msg)
 {

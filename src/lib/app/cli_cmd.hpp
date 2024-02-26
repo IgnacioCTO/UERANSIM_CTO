@@ -29,6 +29,8 @@ struct GnbCliCommand
         UE_LIST,
         UE_COUNT,
         UE_RELEASE_REQ,
+        HANDOVERPREPARE,
+        HANDOVER,
     } present;
 
     // AMF_INFO
@@ -36,6 +38,15 @@ struct GnbCliCommand
 
     // UE_RELEASE_REQ
     int ueId{};
+
+    // HANDOVER
+    int asAmfId{};
+    int64_t amfUeNgapId{};
+    int64_t ranUeNgapId{};
+    int ctxtId{};
+    int ulStr{};
+    std::string amf_name{};
+
 
     explicit GnbCliCommand(PR present) : present(present)
     {
