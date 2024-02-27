@@ -257,6 +257,41 @@ void GtpTask::handleUdpReceive(const udp::NwUdpServerReceive &msg)
             m_logger->err("Uplink data failure, GTP encoding failed");
         return;
     }
+    case gtp::GtpMessage::MT_END_MARKER: { //Ignacio
+
+        auto sessionInd = m_sessionTree.findByDownTeid(gtp->teid);
+
+        if (sessionInd == 0)
+        {
+            m_logger->err("TEID %d not found on GTP-U Downlink", gtp->teid);
+            return;
+        }   
+
+        int ueId = GetUeId(sessionInd);
+        int psi = GetPsi(sessionInd);
+
+        
+        handleSessionRelease(ueId, psi);
+        handleUeContextDelete(ueId);
+        
+        // // Remove all session information from rate limiter
+        // m_rateLimiter->updateSessionUplinkLimit(sessionInd, 0);
+        // m_rateLimiter->updateUeDownlinkLimit(ueId, 0);
+
+        // // And remove from PDU session table
+        // if (m_pduSessions.count(sessionInd))
+        // {
+        //     uint32_t teid = gtp->teid;
+        //     m_pduSessions.erase(sessionInd);
+
+        //     // And remove from the tree
+        //     m_sessionTree.remove(sessionInd, teid);
+        // }
+
+        m_logger->info("END MARKER Received, GTP-U Tunnel Closed");
+
+        return;
+    }
     default: {
         m_logger->err("Unhandled GTP-U message type: %d", gtp->msgType);
         return;

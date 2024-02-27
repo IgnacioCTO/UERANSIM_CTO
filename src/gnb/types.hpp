@@ -30,6 +30,7 @@ class NgapTask;
 class GnbRrcTask;
 class GnbRlsTask;
 class SctpTask;
+class GnbXnTask; //Ignacio
 
 enum class EAmfState
 {
@@ -272,6 +273,14 @@ struct GnbStatusInfo
     bool isNgapUp{};
 };
 
+// Ignacio
+struct GnbXnStatusInfo
+{
+    const int max_xn = 2;
+    std::array<std::string, max_xn> associatedGnbXn = { "", "" };
+    
+};
+
 struct GtpUeContext
 {
     const int ueId;
@@ -344,6 +353,7 @@ struct TaskBase
     GnbRrcTask *rrcTask{};
     SctpTask *sctpTask{};
     GnbRlsTask *rlsTask{};
+    GnbXnTask *XnTask{}; //Ignacio
 };
 
 Json ToJson(const GnbStatusInfo &v);

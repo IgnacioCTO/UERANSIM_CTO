@@ -46,6 +46,9 @@ enum class NtsMessageType
     GNB_NGAP_TO_GTP,
     GNB_SCTP,
 
+    //Ignacio
+    GNB_XN_TO_XN,
+
     UE_APP_TO_TUN,
     UE_APP_TO_NAS,
     UE_TUN_TO_APP,

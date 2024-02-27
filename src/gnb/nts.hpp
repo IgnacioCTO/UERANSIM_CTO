@@ -32,6 +32,23 @@ extern "C"
 namespace nr::gnb
 {
 
+// Ignacio
+struct NmGnbXnToXn : NtsMessage
+{
+    enum PR
+    {
+        HANDOVER_REQUEST,
+        HANDOVER_REQUEST_ACK,
+    } present;
+
+    int ueId{};
+
+    explicit NmGnbXnToXn(PR present) : NtsMessage(NtsMessageType::GNB_XN_TO_XN), present(present)
+    {
+    }
+
+};
+
 struct NmGnbRlsToRrc : NtsMessage
 {
     enum PR
