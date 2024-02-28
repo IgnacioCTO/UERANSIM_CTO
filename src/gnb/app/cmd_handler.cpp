@@ -14,6 +14,7 @@
 #include <gnb/rls/task.hpp>
 #include <gnb/rrc/task.hpp>
 #include <gnb/sctp/task.hpp>
+#include <gnb/xn/task.hpp>
 #include <utils/common.hpp>
 #include <utils/printer.hpp>
 #include <iostream>
@@ -42,6 +43,7 @@ void GnbCmdHandler::pauseTasks()
     m_base->ngapTask->requestPause();
     m_base->rrcTask->requestPause();
     m_base->sctpTask->requestPause();
+    m_base->XnTask->requestPause();
 }
 
 void GnbCmdHandler::unpauseTasks()
@@ -51,6 +53,7 @@ void GnbCmdHandler::unpauseTasks()
     m_base->ngapTask->requestUnpause();
     m_base->rrcTask->requestUnpause();
     m_base->sctpTask->requestUnpause();
+    m_base->XnTask->requestUnpause();
 }
 
 bool GnbCmdHandler::isAllPaused()
@@ -64,6 +67,8 @@ bool GnbCmdHandler::isAllPaused()
     if (!m_base->rrcTask->isPauseConfirmed())
         return false;
     if (!m_base->sctpTask->isPauseConfirmed())
+        return false;
+    if (!m_base->XnTask->isPauseConfirmed())
         return false;
     return true;
 }
@@ -191,6 +196,15 @@ void GnbCmdHandler::handleCmdImpl(NmGnbCliCommand &msg)
         std::cout << " amf_name: "<< amf_name << std::endl;
         m_base->ngapTask->handleXnHandover(asAmfId, amfUeNgapId, ranUeNgapId, ctxtId, ulStr, amf_name);
         
+        break;
+    } 
+    case app::GnbCliCommand::BINDXN: {
+        int xnclientId = msg.cmd->xnclientId; 
+        std::string xnlocalAddress = msg.cmd->xnlocalAddress;
+        int64_t xnlocalPort = msg.cmd->xnlocalPort;
+        std::string xnremoteAddress = msg.cmd->xnremoteAddress;
+        int64_t xnremotePort = msg.cmd->xnremotePort;
+        m_base->XnTask->sendXnRequest(xnclientId, xnlocalAddress, xnlocalPort, xnremoteAddress, xnremotePort);
         break;
     } 
     }

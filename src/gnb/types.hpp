@@ -276,7 +276,7 @@ struct GnbStatusInfo
 // Ignacio
 struct GnbXnStatusInfo
 {
-    const int max_xn = 2;
+    static constexpr  int max_xn = 2;
     std::array<std::string, max_xn> associatedGnbXn = { "", "" };
     
 };

@@ -31,6 +31,8 @@ struct GnbCliCommand
         UE_RELEASE_REQ,
         HANDOVERPREPARE,
         HANDOVER,
+        BINDXN,
+
     } present;
 
     // AMF_INFO
@@ -47,7 +49,13 @@ struct GnbCliCommand
     int ulStr{};
     std::string amf_name{};
 
-
+    // BIND XN
+    int xnclientId;
+    std::string xnlocalAddress; 
+    uint16_t xnlocalPort;
+    std::string xnremoteAddress; 
+    uint16_t xnremotePort;
+    
     explicit GnbCliCommand(PR present) : present(present)
     {
     }

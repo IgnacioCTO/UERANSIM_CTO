@@ -194,6 +194,8 @@ void SctpTask::receiveSctpConnectionSetupRequest(int clientId, const std::string
                                                  sctp::PayloadProtocolId ppid, NtsTask *associatedTask)
 {
     m_logger->info("Trying to establish SCTP connection... (%s:%d)", remoteAddress.c_str(), remotePort);
+    m_logger->info("Trying to establish SCTP connection local... (%s:%d)", localAddress.c_str(), localAddress);
+    m_logger->info("Trying to establish SCTP connection clientId... (%i)", clientId);
 
     auto *client = new sctp::SctpClient(ppid);
 

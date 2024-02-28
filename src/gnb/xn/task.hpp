@@ -5,12 +5,19 @@
 #include <unordered_map>
 #include <vector>
 
+#include <gnb/nts.hpp>
 #include <gnb/types.hpp>
 #include <utils/logger.hpp>
 #include <utils/nts.hpp>
 
 namespace nr::gnb
 {
+
+class SctpTask;
+class GnbRrcTask;
+class GtpTask;
+class GnbAppTask;
+
 // Ignacio
 class GnbXnTask : public NtsTask
 {
@@ -30,6 +37,9 @@ class GnbXnTask : public NtsTask
     void onStart() override;
     void onLoop() override;
     void onQuit() override;
+
+  private:
+    void sendXnRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort);
 };
 
 } // namespace nr::gnb

@@ -17,6 +17,6 @@ build: FORCE
 	cp cmake-build-release/libdevbnd.so build/
 	cp tools/nr-binder build/
 
-	@printf "${GREEN}UERANSIM successfully built.${NC}\n"
+	@printf "${GREEN}UERANSIM CTO successfully built.${NC}\n"
 
 FORCE:

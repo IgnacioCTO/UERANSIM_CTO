@@ -213,27 +213,27 @@ void NgapTask::receiveNgSetupResponse(int amfId, ASN_NGAP_NGSetupResponse *msg)
 void NgapTask::receivePathSwitchRequestACK(int amfId, ASN_NGAP_NGSetupResponse *msg)
 {
     m_logger->debug("Path Switch Request ACK received");
+    
+    // auto *amf = findAmfContext(amfId);
+    // if (amf == nullptr)
+    //     return;
 
-    auto *amf = findAmfContext(amfId);
-    if (amf == nullptr)
-        return;
+    // AssignDefaultAmfConfigs(amf, msg);
 
-    AssignDefaultAmfConfigs(amf, msg);
+    // amf->state = EAmfState::CONNECTED;
+    // m_logger->info("NG Setup procedure is successful");
 
-    amf->state = EAmfState::CONNECTED;
-    m_logger->info("NG Setup procedure is successful");
+    // if (!m_isInitialized && std::all_of(m_amfCtx.begin(), m_amfCtx.end(),
+    //                                     [](auto &amfCtx) { return amfCtx.second->state == EAmfState::CONNECTED; }))
+    // {
+    //     m_isInitialized = true;
 
-    if (!m_isInitialized && std::all_of(m_amfCtx.begin(), m_amfCtx.end(),
-                                        [](auto &amfCtx) { return amfCtx.second->state == EAmfState::CONNECTED; }))
-    {
-        m_isInitialized = true;
+    //     auto update = std::make_unique<NmGnbStatusUpdate>(NmGnbStatusUpdate::NGAP_IS_UP);
+    //     update->isNgapUp = true;
+    //     m_base->appTask->push(std::move(update));
 
-        auto update = std::make_unique<NmGnbStatusUpdate>(NmGnbStatusUpdate::NGAP_IS_UP);
-        update->isNgapUp = true;
-        m_base->appTask->push(std::move(update));
-
-        m_base->rrcTask->push(std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::AN_RELEASE));
-    }
+    //     m_base->rrcTask->push(std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::AN_RELEASE));
+    // }
 }
 
 void NgapTask::receiveNgSetupFailure(int amfId, ASN_NGAP_NGSetupFailure *msg)

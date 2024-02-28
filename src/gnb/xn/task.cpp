@@ -1,5 +1,5 @@
 #include "task.hpp"
-#include "cmd_handler.hpp"
+//#include "types.hpp"
 
 #include <gnb/nts.hpp>
 
@@ -13,6 +13,7 @@ GnbXnTask::GnbXnTask(TaskBase *base) : m_base{base}, m_statusInfo{}
 
 void GnbXnTask::onStart()
 {
+    m_logger->info("Interface Xn Created.");
 }
 
 void GnbXnTask::onLoop()
@@ -21,31 +22,29 @@ void GnbXnTask::onLoop()
     if (!msg)
         return;
 
-    switch (msg->msgType)
+    if (msg->msgType == NtsMessageType::GNB_XN_TO_XN)
     {
-    case NtsMessageType::GNB_XN_TO_XN: {
+   
         m_logger->debug("First Xn Message!");
         auto& w = dynamic_cast<NmGnbXnToXn &>(*msg);
-        switch (w.what)
+
+        switch (w.present)
         {
         case NmGnbXnToXn::HANDOVER_REQUEST:
             m_logger->debug("First Xn HO REQUEST!");
-            // m_statusInfo.isNgapUp = w.isNgapUp;
             break;
-        }
+        
         case NmGnbXnToXn::HANDOVER_REQUEST_ACK:
             m_logger->debug("First Xn HO REQUEST ACK!");
-            // m_statusInfo.isNgapUp = w.isNgapUp;
+            break;
+             
+        default:
+            m_logger->unhandledNts(*msg);
             break;
         }
-       
-        break;
-    }
-    default:
-        m_logger->unhandledNts(*msg);
-        break;
     }
 }
+
 
 void GnbXnTask::onQuit()
 {
