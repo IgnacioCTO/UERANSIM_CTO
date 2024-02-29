@@ -22,6 +22,7 @@ class GnbAppTask;
 class GnbXnTask : public NtsTask
 {
   private:
+
     TaskBase *m_base;
     std::unique_ptr<Logger> m_logger;
 
@@ -39,6 +40,7 @@ class GnbXnTask : public NtsTask
     void onQuit() override;
 
   private:
+    /* Interface management */
     void sendXnRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort);
 };
 

@@ -63,6 +63,7 @@ class SctpTask : public NtsTask
     void receiveUnhandledNotification(int clientId);
     void receiveConnectionClose(int clientId);
     void receiveSendMessage(int clientId, uint16_t stream, UniqueBuffer &&buffer);
+    void sendXnConnectionSetupRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort);
 };
 
 } // namespace nr::gnb

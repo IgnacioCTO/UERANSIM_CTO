@@ -267,6 +267,7 @@ struct NmGnbSctp : NtsMessage
         RECEIVE_MESSAGE,
         SEND_MESSAGE,
         UNHANDLED_NOTIFICATION,
+        XN_CONNECTION_REQUEST,
     } present;
 
     // CONNECTION_REQUEST

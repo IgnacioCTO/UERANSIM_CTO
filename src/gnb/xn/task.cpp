@@ -8,12 +8,14 @@ namespace nr::gnb
 // Ignacio
 GnbXnTask::GnbXnTask(TaskBase *base) : m_base{base}, m_statusInfo{}
 {
-    m_logger = m_base->logBase->makeUniqueLogger("Xn");
+    m_logger = m_base->logBase->makeUniqueLogger("xn");
 }
 
 void GnbXnTask::onStart()
 {
-    m_logger->info("Interface Xn Created.");
+    m_logger->info("Interface Xn created.");
+    sctp::SctpServer xnserver(m_base->config->ngapIp, 8080);//TODO:xnIp in config
+    m_logger->info("Xn server interface is active.");  
 }
 
 void GnbXnTask::onLoop()
@@ -48,6 +50,6 @@ void GnbXnTask::onLoop()
 
 void GnbXnTask::onQuit()
 {
-}
+} 
 
 } // namespace nr::gnb

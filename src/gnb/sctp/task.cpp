@@ -154,6 +154,11 @@ void SctpTask::onLoop()
             receiveSendMessage(w.clientId, w.stream, std::move(w.buffer));
             break;
         }
+        case NmGnbSctp::XN_CONNECTION_REQUEST: {
+            sendXnConnectionSetupRequest(w.clientId, w.localAddress, w.localPort, w.remoteAddress,
+                                         w.remotePort);
+            break;
+        }
         case NmGnbSctp::UNHANDLED_NOTIFICATION: {
             receiveUnhandledNotification(w.clientId);
             break;
@@ -180,6 +185,49 @@ void SctpTask::onQuit()
     m_clients.clear();
 }
 
+void SctpTask::sendXnConnectionSetupRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort){
+    sctp::PayloadProtocolId ppid = sctp::PayloadProtocolId::NGAP; //TODO
+
+    auto *client = new sctp::SctpClient(ppid);
+
+    try
+    {
+        client->bind(xnlocalAddress, xnlocalPort);
+    }
+    catch (const sctp::SctpError &exc)
+    {
+        m_logger->err("Binding to Xn Interface %s:%d failed. %s", xnlocalAddress.c_str(), xnlocalPort, exc.what());
+        delete client;
+        return;
+    }
+
+    try
+    {
+        client->connect(xnremoteAddress, xnremotePort);
+    }
+    catch (const sctp::SctpError &exc)
+    {
+        m_logger->err("Connecting to Xn Interface %s:%d failed. %s", xnremoteAddress.c_str(), xnremotePort, exc.what());
+        delete client;
+        return;
+    }    
+
+    m_logger->info("SCTP connection established with Xn Interface (%s:%d)", xnremoteAddress.c_str(), xnremotePort);
+    
+    sctp::ISctpHandler *handler = new SctpHandler(this, xnclientId);
+
+    auto *entry = new ClientEntry;
+    m_clients[xnclientId] = entry;
+
+    entry->id = xnclientId;
+    entry->client = client;
+    entry->handler = handler;
+    //entry->associatedTask = associatedTask;
+    entry->receiverThread = new ScopedThread(
+        [](void *arg) { ReceiverThread(reinterpret_cast<std::pair<sctp::SctpClient *, sctp::ISctpHandler *> *>(arg)); },
+        new std::pair<sctp::SctpClient *, sctp::ISctpHandler *>(client, handler));  
+}
+
 void SctpTask::DeleteClientEntry(ClientEntry *entry)
 {
     entry->associatedTask = nullptr;
@@ -194,7 +242,7 @@ void SctpTask::receiveSctpConnectionSetupRequest(int clientId, const std::string
                                                  sctp::PayloadProtocolId ppid, NtsTask *associatedTask)
 {
     m_logger->info("Trying to establish SCTP connection... (%s:%d)", remoteAddress.c_str(), remotePort);
-    m_logger->info("Trying to establish SCTP connection local... (%s:%d)", localAddress.c_str(), localAddress);
+    m_logger->info("Trying to establish SCTP connection local... (%s:%d)", localAddress.c_str(), localPort);
     m_logger->info("Trying to establish SCTP connection clientId... (%i)", clientId);
 
     auto *client = new sctp::SctpClient(ppid);
