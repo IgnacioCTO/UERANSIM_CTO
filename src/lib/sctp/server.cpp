@@ -13,11 +13,11 @@ sctp::SctpServer::SctpServer(const std::string &address, uint16_t port) : sd(0)
 {
     try
     {
-        sd = CreateSocket();
+        sd = CreateSocket(); //sd is the descriptor identifier 
         BindSocket(sd, address, port);
-        SetInitOptions(sd, 10, 10, 10, 10 * 1000);
-        SetEventOptions(sd);
-        StartListening(sd);
+        SetInitOptions(sd, 10, 10, 10, 10 * 1000); //max instreams, outstreams,max attemps, timeout
+        SetEventOptions(sd); //set subscribed events
+        StartListening(sd); 
     }
     catch (const SctpError &e)
     {
@@ -33,5 +33,5 @@ sctp::SctpServer::~SctpServer()
 
 void sctp::SctpServer::start()
 {
-    Accept(sd);
+    Accept(sd);  
 }

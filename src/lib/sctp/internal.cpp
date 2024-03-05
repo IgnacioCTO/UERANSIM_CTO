@@ -51,7 +51,7 @@ void BindSocket(int sd, const std::string &address, uint16_t port)
     sockaddr addr = {};
     std::memset(&addr, 0, sizeof(sockaddr_in));
 
-    int ipVersion = utils::GetIpVersion(address);
+    int ipVersion = utils::GetIpVersion(address);   
 
     if (ipVersion == 6)
     {
@@ -121,7 +121,7 @@ void Accept(int sd)
     sockaddr saddr{};
     socklen_t saddr_size{};
 
-    int clientSd = accept(sd, &saddr, &saddr_size);
+    int clientSd = accept(sd, &saddr, &saddr_size); // creates a dedicated socket for communicating with the client
     if (clientSd < 0)
         ThrowError("SCTP accept failure: ", errno);
 }

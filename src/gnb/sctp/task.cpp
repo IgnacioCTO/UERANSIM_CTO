@@ -156,7 +156,7 @@ void SctpTask::onLoop()
         }
         case NmGnbSctp::XN_CONNECTION_REQUEST: {
             sendXnConnectionSetupRequest(w.clientId, w.localAddress, w.localPort, w.remoteAddress,
-                                         w.remotePort);
+                                         w.remotePort, w.ppid, w.associatedTask);
             break;
         }
         case NmGnbSctp::UNHANDLED_NOTIFICATION: {
@@ -185,8 +185,11 @@ void SctpTask::onQuit()
     m_clients.clear();
 }
 
-void SctpTask::sendXnConnectionSetupRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort){
-    sctp::PayloadProtocolId ppid = sctp::PayloadProtocolId::NGAP; //TODO
+void SctpTask::sendXnConnectionSetupRequest(int xnclientId, const std::string &xnlocalAddress, uint16_t xnlocalPort,
+                                                 const std::string &xnremoteAddress, uint16_t xnremotePort,
+                                                 sctp::PayloadProtocolId ppid, NtsTask *associatedTask){
+    
+    //sctp::PayloadProtocolId ppid = sctp::PayloadProtocolId::NGAP; //TODO
 
     auto *client = new sctp::SctpClient(ppid);
 
@@ -222,10 +225,11 @@ void SctpTask::sendXnConnectionSetupRequest(int xnclientId, std::string xnlocalA
     entry->id = xnclientId;
     entry->client = client;
     entry->handler = handler;
-    //entry->associatedTask = associatedTask;
+    entry->associatedTask = associatedTask;
     entry->receiverThread = new ScopedThread(
         [](void *arg) { ReceiverThread(reinterpret_cast<std::pair<sctp::SctpClient *, sctp::ISctpHandler *> *>(arg)); },
         new std::pair<sctp::SctpClient *, sctp::ISctpHandler *>(client, handler));  
+ 
 }
 
 void SctpTask::DeleteClientEntry(ClientEntry *entry)
@@ -290,6 +294,7 @@ void SctpTask::receiveAssociationSetup(int clientId, int associationId, int inSt
     m_logger->debug("SCTP association setup ascId[%d]", associationId);
 
     ClientEntry *entry = m_clients[clientId];
+
     if (entry == nullptr)
     {
         m_logger->warn("Client entry not found for id: %d", clientId);

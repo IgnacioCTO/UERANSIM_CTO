@@ -63,7 +63,9 @@ class SctpTask : public NtsTask
     void receiveUnhandledNotification(int clientId);
     void receiveConnectionClose(int clientId);
     void receiveSendMessage(int clientId, uint16_t stream, UniqueBuffer &&buffer);
-    void sendXnConnectionSetupRequest(int xnclientId, std::string xnlocalAddress, int64_t xnlocalPort, std::string xnremoteAddress, int64_t xnremotePort);
+    void sendXnConnectionSetupRequest(int xnclientId, const std::string &xnlocalAddress, uint16_t xnlocalPort,
+                                                 const std::string &xnremoteAddress, uint16_t xnremotePort,
+                                                 sctp::PayloadProtocolId ppid, NtsTask *associatedTask);
 };
 
 } // namespace nr::gnb

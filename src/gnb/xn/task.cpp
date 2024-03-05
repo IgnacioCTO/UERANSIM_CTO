@@ -1,8 +1,12 @@
 #include "task.hpp"
+#include <thread>
+#include <iostream>
+#include <string>
 //#include "types.hpp"
 
 #include <gnb/nts.hpp>
-
+#include <gnb/app/task.hpp>
+#include <gnb/sctp/task.hpp>
 namespace nr::gnb
 {
 // Ignacio
@@ -12,10 +16,35 @@ GnbXnTask::GnbXnTask(TaskBase *base) : m_base{base}, m_statusInfo{}
 }
 
 void GnbXnTask::onStart()
-{
-    m_logger->info("Interface Xn created.");
-    sctp::SctpServer xnserver(m_base->config->ngapIp, 8080);//TODO:xnIp in config
-    m_logger->info("Xn server interface is active.");  
+{    
+    std::string str = m_base->config->ngapIp;
+    std::cout << str << std::endl;
+    size_t last_index = str.find_last_not_of("0123456789");
+    int server_port = std::stoi(str.substr(last_index + 1)) + 8080;
+    std::cout << server_port << std::endl;
+
+    if (server_port == 8084){
+        sctp::SctpServer xnserver("127.0.0.1", server_port);//TODO:xnIp in config m_base->config->ngapIp
+        m_logger->info("Interface Xn created");
+        xnserver.start();
+        m_logger->info("Xn server interface is active");
+    } else {
+        auto msg = std::make_unique<NmGnbSctp>(NmGnbSctp::XN_CONNECTION_REQUEST);
+        msg->clientId = 7;
+        msg->localAddress = "127.0.0.1";
+        msg->localPort = 5555;
+        msg->remoteAddress = "127.0.0.1";
+        msg->remotePort = 8084;
+        msg->ppid = sctp::PayloadProtocolId::NGAP;
+        msg->associatedTask = this;
+        m_base->sctpTask->push(std::move(msg));   
+        m_logger->info("Xn Connection Request Sent");
+    }
+
+    // here is where i should send the request to connect to xn
+    // cause i need to include this instance as the assoc task
+    // looking at onstart ngap task.cpp is where it launch the
+    // petition
 }
 
 void GnbXnTask::onLoop()
