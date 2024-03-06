@@ -18,14 +18,13 @@ GnbXnTask::GnbXnTask(TaskBase *base) : m_base{base}, m_statusInfo{}
 void GnbXnTask::onStart()
 {    
     std::string str = m_base->config->ngapIp;
-    std::cout << str << std::endl;
     size_t last_index = str.find_last_not_of("0123456789");
     int server_port = std::stoi(str.substr(last_index + 1)) + 8080;
-    std::cout << server_port << std::endl;
+
+    m_logger->info("Interface Xn created");
 
     if (server_port == 8084){
         sctp::SctpServer xnserver("127.0.0.1", server_port);//TODO:xnIp in config m_base->config->ngapIp
-        m_logger->info("Interface Xn created");
         xnserver.start();
         m_logger->info("Xn server interface is active");
     } else {
@@ -38,7 +37,7 @@ void GnbXnTask::onStart()
         msg->ppid = sctp::PayloadProtocolId::NGAP;
         msg->associatedTask = this;
         m_base->sctpTask->push(std::move(msg));   
-        m_logger->info("Xn Connection Request Sent");
+        m_logger->info("Xn connection request sent");
     }
 
     // here is where i should send the request to connect to xn
